@@ -22,6 +22,10 @@ jobs:
               --template-file template.yml \
               --stack-name myStack-setup \
               --region us-east-1
+      
+      - run:
+          name: crate workspace folder
+          command: mkdir -p /tmp/workspace
 
       - run:
           name: Get public IP
@@ -29,14 +33,16 @@ jobs:
             aws ec2 describe-tags \
             --filters "Name=tag:Name,Values=Ansible_Node" \
             --query 'Reservations[*].Instances[*].[PublicIpAddress]' \
-            --output text >> ~/inventory.txt
+            --output text >> /tmp/workspace/inventory.txt
       
-      - save_cache:
+      - persist_to_workspace:
+          root: /tmp/workspace
           paths:
-            - ~/
-          key: inventory.txt
+            - inventory.txt
+
       - run:
-          command: cat ~/inventory.txt
+          command: cat /tmp/workspace/inventory.txt
+
   configure_infrastructure: 
     docker:
       - image: python:3.7-alpine3.11
@@ -56,14 +62,13 @@ jobs:
           command: |
             apk add --update ansible
 
-      - restore_cache:
-          keys: 
-            - inventory.txt
-      
+      - attach_workspace:
+          at: /tmp/workspace
+
       - run:
           name: Run Playbook and Configure server
           command: |
-            ansible-playbook -i ~/inventory.txt main.yml
+            ansible-playbook -i /tmp/workspace/inventory.txt main.yml
             
   smoke_test:
     docker:
