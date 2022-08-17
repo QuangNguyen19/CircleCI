@@ -1,2 +1,2 @@
 [all]
-ansible_node ansible_host=44.197.212.91 ansible_user=ubuntu
+ansible_node ansible_host=3.237.186.43 ansible_user=ubuntu
