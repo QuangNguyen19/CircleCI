@@ -1,63 +1,63 @@
 version: 2.1
-# commands:
-#    destroy_environment:
-#      steps:
-#        - run:
-#            name: Destroy environment
-#            when: on_fail
-#            command: |
-#              aws cloudformation delete-stack --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5}
+commands:
+   destroy_environment:
+     steps:
+       - run:
+           name: Destroy environment
+           when: on_fail
+           command: |
+             aws cloudformation delete-stack --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5}
 orbs:
   aws-cli: circleci/aws-cli@2.0.3
 jobs:
-  create_infrastructure: 
+  # create_infrastructure: 
+  #   docker:
+  #     - image: amazon/aws-cli
+  #   steps:
+  #     - checkout
+  #     - run:
+  #         name: Create Cloudformation Stack
+  #         command: |
+  #           aws cloudformation deploy \
+  #             --template-file template.yml \
+  #             --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} \
+  #             --region us-east-1
+  configure_infrastructure: 
+    docker:
+      - image: python:3.7-alpine3.11
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints: 
+            - "46:55:b0:51:d8:5f:2a:a7:1f:09:28:e8:89:63:da:f5"
+
+      - run: 
+          name: Install openssh
+          command: |
+            apk add openssh-client
+
+      - run:
+          name: Install Ansible
+          command: |
+            apk add --update ansible
+      - run:
+          name: Run Playbook and Configure server
+          command: |
+            ansible-playbook -i inventory.txt main.yml
+  smoke_test:
     docker:
       - image: amazon/aws-cli
     steps:
-      - checkout
       - run:
-          name: Create Cloudformation Stack
-          command: |
-            aws cloudformation deploy \
-              --template-file template.yml \
-              --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} \
-              --region us-east-1
-#   configure_infrastructure: 
-#     docker:
-#       - image: python:3.7-alpine3.11
-#     steps:
-#       - checkout
-#       - add_ssh_keys:
-#           fingerprints: 
-#             - "46:55:b0:51:d8:5f:2a:a7:1f:09:28:e8:89:63:da:f5"
-
-#       - run: 
-#           name: Install openssh
-#           command: |
-#             apk add openssh-client
-
-#       - run:
-#           name: Install Ansible
-#           command: |
-#             apk add --update ansible
-#       - run:
-#           name: Run Playbook and Configure server
-#           command: |
-#             ansible-playbook -i inventory.txt main.yml
-#   smoke_test:
-#     docker:
-#       - image: amazon/aws-cli
-#     steps:
-#       - run:
-#           name: Test job
-#           command:  return 1
-#       - destroy_environment 
+          name: Test job
+          command:  return 1
+      - destroy_environment 
 
 workflows:
   myWorkflow:
     jobs:
-      - create_infrastructure
-      # - configure_infrastructure
-      # - smoke_test:
-      #     requires:
-      #       - configure_infrastructure
+      # - create_infrastructure
+      - configure_infrastructure
+      - smoke_test:
+          requires:
+            - configure_infrastructure
