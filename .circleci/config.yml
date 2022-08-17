@@ -6,22 +6,35 @@ commands:
            name: Destroy environment
            when: on_fail
            command: |
-             aws cloudformation delete-stack --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5}
+             aws cloudformation delete-stack --stack-name myStack-setup
 orbs:
   aws-cli: circleci/aws-cli@2.0.3
 jobs:
-  # create_infrastructure: 
-  #   docker:
-  #     - image: amazon/aws-cli
-  #   steps:
-  #     - checkout
-  #     - run:
-  #         name: Create Cloudformation Stack
-  #         command: |
-  #           aws cloudformation deploy \
-  #             --template-file template.yml \
-  #             --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} \
-  #             --region us-east-1
+  create_infrastructure: 
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: Create Cloudformation Stack
+          command: |
+            aws cloudformation deploy \
+              --template-file template.yml \
+              --stack-name myStack-setup \
+              --region us-east-1
+
+      - run:
+          name: Get public IP
+          command: /
+            aws ec2 describe-tags \
+            --filters "Name=Name,Values=Ansible_Node" \
+            --output text >> ~/inventory.txt
+      
+      - save_cache:
+          paths:
+            - ~/
+          key: inventory.txt
+      
   configure_infrastructure: 
     docker:
       - image: python:3.7-alpine3.11
@@ -40,10 +53,16 @@ jobs:
           name: Install Ansible
           command: |
             apk add --update ansible
+
+      - restore_cache:
+          keys: 
+            - inventory.txt
+      
       - run:
           name: Run Playbook and Configure server
           command: |
-            ansible-playbook -i inventory.txt main.yml
+            ansible-playbook -i ~/inventory.txt main.yml
+            
   smoke_test:
     docker:
       - image: amazon/aws-cli
