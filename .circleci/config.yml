@@ -71,7 +71,7 @@ jobs:
 #           at: /tmp/workspace
 
 #       - run:
-#           name: Run Playbook and Configure server
+#           name: Run playbook and Configure server
 #           command: |
 #             ansible-playbook -i /tmp/workspace/inventory.txt main.yml
             
