@@ -34,7 +34,8 @@ jobs:
           paths:
             - ~/
           key: inventory.txt
-      
+      - run:
+          command: cat ~/inventory.txt
   configure_infrastructure: 
     docker:
       - image: python:3.7-alpine3.11
