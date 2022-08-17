@@ -34,7 +34,7 @@ jobs:
             aws ec2 describe-instances \
             --query 'Reservations[*].Instances[*].PublicIpAddress' \
             --filters "Name=tag:Name,Values=Ansible_Node" "Name=instance-state-name,Values=running" \
-            --output text >> inventory.txt
+            --output text >> /tmp/workspace/inventory.txt
 
       - save_cache:
           key: inventory-{{ .Environment.CIRCLE_WORKFLOW_ID }}
@@ -66,7 +66,7 @@ jobs:
       - restore_cache:
           keys:
             - inventory-{{ .Environment.CIRCLE_WORKFLOW_ID }}
-            
+
       - run:
           name: Run playbook and Configure server
           command: |
