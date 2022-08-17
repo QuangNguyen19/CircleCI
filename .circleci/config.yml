@@ -34,54 +34,55 @@ jobs:
       - run:
           name: Get public IP
           command: |
+            echo "[all]" > inventory.txt
             aws ec2 describe-tags \
             --filters "Name=tag:Name,Values=Ansible_Node" \
             --query 'Reservations[*].Instances[*].[PublicIpAddress]' \
-            --output text >> /tmp/workspace/inventory.txt
+            --output text >> /tmp/workspace/inventory-{{ .Environment.CIRCLE_WORKFLOW_ID }}.txt
       
-      - persist_to_workspace:
-          root: /tmp/workspace
+      - save_cache:
+          key: inventory-{{ .Environment.CIRCLE_WORKFLOW_ID }}
           paths:
-            - inventory.txt
+            - /tmp/workspace/
 
       - run:
-          command: cat /tmp/workspace/inventory.txt
+          command: cat /tmp/workspace/inventory-{{ .Environment.CIRCLE_WORKFLOW_ID }}
 
-  configure_infrastructure: 
-    docker:
-      - image: python:3.7-alpine3.11
-    steps:
-      - checkout
-      - add_ssh_keys:
-          fingerprints: 
-            - "46:55:b0:51:d8:5f:2a:a7:1f:09:28:e8:89:63:da:f5"
+#   configure_infrastructure: 
+#     docker:
+#       - image: python:3.7-alpine3.11
+#     steps:
+#       - checkout
+#       - add_ssh_keys:
+#           fingerprints: 
+#             - "46:55:b0:51:d8:5f:2a:a7:1f:09:28:e8:89:63:da:f5"
 
-      - run: 
-          name: Install openssh
-          command: |
-            apk add openssh-client
+#       - run: 
+#           name: Install openssh
+#           command: |
+#             apk add openssh-client
 
-      - run:
-          name: Install Ansible
-          command: |
-            apk add --update ansible
+#       - run:
+#           name: Install Ansible
+#           command: |
+#             apk add --update ansible
 
-      - attach_workspace:
-          at: /tmp/workspace
+#       - attach_workspace:
+#           at: /tmp/workspace
 
-      - run:
-          name: Run Playbook and Configure server
-          command: |
-            ansible-playbook -i /tmp/workspace/inventory.txt main.yml
+#       - run:
+#           name: Run Playbook and Configure server
+#           command: |
+#             ansible-playbook -i /tmp/workspace/inventory.txt main.yml
             
-  smoke_test:
-    docker:
-      - image: amazon/aws-cli
-    steps:
-      - run:
-          name: Test job
-          command:  return 1
-      - destroy_environment 
+#   smoke_test:
+#     docker:
+#       - image: amazon/aws-cli
+#     steps:
+#       - run:
+#           name: Test job
+#           command:  return 1
+#       - destroy_environment 
 
 workflows:
   myWorkflow:
