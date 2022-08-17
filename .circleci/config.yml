@@ -25,7 +25,7 @@ jobs:
 
       - run:
           name: Get public IP
-          command: /
+          command: |
             aws ec2 describe-tags \
             --filters "Name=Name,Values=Ansible_Node" \
             --output text >> ~/inventory.txt
