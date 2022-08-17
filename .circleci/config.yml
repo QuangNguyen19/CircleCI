@@ -27,7 +27,7 @@ jobs:
           name: Get public IP
           command: |
             aws ec2 describe-tags \
-            --filters "Name=tag:Name,Values=Ansible_Node" \
+            --filters "Name=Ansible_Node" \
             --query 'Reservations[*].Instances[*].PublicIpAddress' \
             --output text >> ~/inventory.txt
       
